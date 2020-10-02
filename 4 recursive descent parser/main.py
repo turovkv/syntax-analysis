@@ -10,3 +10,5 @@ if __name__ == '__main__':
 
     if par.last_error is not None:
         print(par.last_error)
+    else:
+        print('OK')
