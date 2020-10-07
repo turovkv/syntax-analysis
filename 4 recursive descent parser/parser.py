@@ -12,7 +12,7 @@ class Parser:
 
     def expect(self, token_type):
         if self.current is None:
-            self.last_error = None
+            self.last_error = f'Error! Expected {token_type}, but EndOfFile found'
             return False
         if self.current.type == token_type:
             self.current = next(self.lex)
@@ -23,13 +23,18 @@ class Parser:
         return False
 
     def definition(self):
+        if self.current is None:
+            self.last_error = None
+            return False
         if not self.expect('IDENTIFIER'):
             return False
         if self.expect('END'):
+            self.last_error = None
             return True
         if self.expect('DEFINITION') and \
                 self.disjunction() and \
                 self.expect('END'):
+            self.last_error = None
             return True
         return False
 
@@ -50,10 +55,13 @@ class Parser:
         return True
 
     def lowest_expr(self):
+        if self.expect('LPAREN'):
+            if self.disjunction() and \
+                    self.expect('RPAREN'):
+                return True
+            else:
+                return False
+
         if self.expect('IDENTIFIER'):
-            return True
-        if self.expect('LPAREN') and \
-                self.disjunction() and \
-                self.expect('RPAREN'):
             return True
         return False
