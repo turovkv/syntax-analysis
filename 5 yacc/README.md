@@ -1,0 +1,1 @@
+`python3 parser.py file_name`
