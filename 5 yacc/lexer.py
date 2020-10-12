@@ -49,8 +49,12 @@ def find_column(inp, token):
 
 
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
-    t.lexer.skip(1)
+    error_msg = "SYNTAX ERROR (illegal character)"
+    if t:
+        error_msg += f" in line {t.lineno} in pos {t.lexpos} !"
+    else:
+        error_msg += " at EOF !"
+    raise SyntaxError(error_msg)
 
 
 lexer = lex.lex()
