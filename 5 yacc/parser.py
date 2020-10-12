@@ -54,27 +54,27 @@ def p_atom(p):
             | IDENTIFIER atom2
             | IDENTIFIER atom2 atom"""
     if len(p) == 2:
-        p[0] = f'Atom (ID {p[1]})'
+        p[0] = f'Atom({p[1]})'
     elif len(p) == 3:
-        p[0] = f'Atom (ID {p[1]} {p[2]})'
+        p[0] = f'Atom({p[1]} {p[2]})'
     elif len(p) == 4:
-        p[0] = f'Atom (ID {p[1]} {p[2]} {p[3]})'
+        p[0] = f'Atom({p[1]} {p[2]} {p[3]})'
 
 
 def p_atom2(p):
     """atom2 : atom3
              | atom3 atom2"""
     if len(p) == 2:
-        p[0] = f'Atom2 ({p[1]})'
+        p[0] = f'{p[1]}'
     elif len(p) == 3:
-        p[0] = f'Atom2 ({p[1]} {p[2]})'
+        p[0] = f'{p[1]} {p[2]}'
 
 
 def p_atom3(p):
     """atom3 : LBR atom RBR
              | LBR atom3 RBR"""
     if len(p) == 4:
-        p[0] = f'Atom3 ({p[2]})'
+        p[0] = f'{p[2]}'
 
 
 def p_error(p):
