@@ -1,5 +1,6 @@
 import ply.yacc as yacc
 import sys
+import lexer
 from lexer import tokens
 
 
@@ -49,19 +50,24 @@ def p_lowexpr(p):
 
 
 def p_atom(p):
-    """atom : IDENTIFIER
-            | IDENTIFIER atom
-            | IDENTIFIER atom2
-            | IDENTIFIER atom2 atom"""
+    """atom : id
+            | id atom2"""
     if len(p) == 2:
-        p[0] = f'Atom({p[1]})'
+        p[0] = f'Atom ({p[1]})'
     elif len(p) == 3:
-        p[0] = f'Atom({p[1]} {p[2]})'
-    elif len(p) == 4:
-        p[0] = f'Atom({p[1]} {p[2]} {p[3]})'
+        p[0] = f'Atom ({p[1]} {p[2]})'
 
 
-def p_atom2(p):
+def p_atom2_id(p):
+    """atom2 : id
+             | id atom2"""
+    if len(p) == 2:
+        p[0] = f'Atom ({p[1]})'
+    elif len(p) == 3:
+        p[0] = f'Atom ({p[1]}) {p[2]}'
+
+
+def p_atom2_atom3(p):
     """atom2 : atom3
              | atom3 atom2"""
     if len(p) == 2:
@@ -77,10 +83,15 @@ def p_atom3(p):
         p[0] = f'{p[2]}'
 
 
+def p_id(p):
+    """id : IDENTIFIER"""
+    p[0] = f'ID {p[1]}'
+
+
 def p_error(p):
     error_msg = "SYNTAX ERROR"
     if p:
-        error_msg += f" in line {p.lineno} in pos {p.lexpos} !"
+        error_msg += f" in line {p.lineno} in pos {p.lexpos - lexer.line_start_pos + 1} !"
     else:
         error_msg += " at EOF !"
     raise SyntaxError(error_msg)
@@ -96,4 +107,3 @@ if __name__ == '__main__':
             file_out.write(f'OK !\n{result}')
         except SyntaxError as e:
             file_out.write(str(e))
-

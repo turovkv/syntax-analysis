@@ -43,15 +43,10 @@ def t_newline(t):
     line_start_pos = t.lexpos + len(t.value)
 
 
-def find_column(inp, token):
-    line_start = inp.rfind('\n', 0, token.lexpos) + 1
-    return (token.lexpos - line_start) + 1
-
-
 def t_error(t):
     error_msg = "SYNTAX ERROR (illegal character)"
     if t:
-        error_msg += f" in line {t.lineno} in pos {t.lexpos} !"
+        error_msg += f" in line {t.lineno} in pos {t.lexpos - line_start_pos + 1} !"
     else:
         error_msg += " at EOF !"
     raise SyntaxError(error_msg)
