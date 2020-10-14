@@ -1,44 +1,6 @@
 from parsita import *
 import sys
 
-# def printAST(node):
-#     if len(node) == 1:
-#         ans = 'ERROR'
-#
-#     if node[0] == 'Program':
-#         ans = '\n'.join(map(printAST, node[1:]))
-#     if node[0] == 'Relation':
-#         ans = f'relHead ({printAST(node[1])})'
-#         if len(node) > 2:
-#             ans += ' relBody (' + ' '.join(map(printAST, node[2:])) + ')'
-#     if node[0] == 'Disj':
-#         if len(node) == 2:
-#             ans = printAST(node[1])
-#         else:
-#             ans = 'Disj (' + ')('.join(map(printAST, node[1:])) + ')'
-#     if node[0] == 'Conj':
-#         if len(node) == 2:
-#             ans = printAST(node[1])
-#         else:
-#             ans = 'Conj (' + ')('.join(map(printAST, node[1:])) + ')'
-#     if node[0] == 'Lowexpr':
-#         ans = printAST(node[1]) #???
-#     if node[0] == 'Atom':
-#         ans = 'Atom (' + ' '.join(map(printAST, node[1:])) + ')'
-#     if node[0] == 'ID':
-#         ans = f'ID {node[1]}'
-#     return ans
-
-
-# def printAST(node, ident = 0):
-#     if not isinstance(node, list):
-#         return ' ' * ident + str(node)
-#     ans = ''
-#     ans += ' ' * ident + f'[{node[0]}\n'
-#     ans += '\n'.join(map(lambda x: printAST(x, ident + 4), node[1:])) + '\n'
-#     ans += ' ' * ident + ']'
-#     return ans
-
 
 def printAST(node):
     if not isinstance(node, list):
@@ -46,20 +8,34 @@ def printAST(node):
     if node[0] == 'Program':
         ans = f'{node[0]} (\n' + '\n'.join(map(printAST, node[1:])) + '\n)'
     else:
-        ans = f'{node[0]} (' + ')('.join(map(printAST, node[1:])) + ')'
+        ans = f'{node[0]} (' + ') ('.join(map(printAST, node[1:])) + ')'
     return ans
 
 
 class PrologParsers(TextParsers, whitespace=r'[ \t\n\r]*'):
-    id = reg(r'[a-zA-Z_][a-zA-Z_0-9]*') > (lambda x: ['ID'] + [x])
-    program = rep(relation) > (lambda x: printAST(['Program'] + x))
+    keywords = {'module', 'type'}
+    not_keyword_comb = lambda parser, kw=keywords: pred(parser, lambda x: x not in kw, 'not a keyword')
+    identifier = not_keyword_comb(reg(r'[a-z_][a-zA-Z_0-9]*')) > (lambda x: ['ID'] + [x])
+    variable = not_keyword_comb(reg(r'[A-Z][a-zA-Z_0-9]*')) > (lambda x: ['Var'] + [x])
+
+    module = 'module' >> identifier << '.' > (lambda x: ['Module'] + [x])
+
+    type = 'type' >> identifier & typeexpr << '.' > (lambda x: ['Typedef'] + [x[0]] + [x[1]])
+
+    typeexpr = rep1sep(inner_type, '->') > (lambda x: x[0] if len(x) == 1 and x[0][0] == 'Type' else ['Type'] + x)
+    inner_type = atom | variable | '(' >> inner_type << ')' | '(' >> typeexpr << ')'
+
     relation = atom & opt(':-' >> disjunction) << '.' > (lambda x: ['Relation'] + [x[0]] + x[1])
+
     disjunction = rep1sep(conjunction, ';') > (lambda x: ['Disj'] + x)
     conjunction = rep1sep(lowexpr, ',') > (lambda x: ['Conj'] + x)
     lowexpr = atom | '(' >> disjunction << ')' > (lambda x: ['Lowexpr'] + [x])
-    atom = id & rep(simple_atom | inner_atom) > (lambda x: ['Atom'] + [x[0]] + x[1])
+
+    atom = identifier & rep(simple_atom | inner_atom) > (lambda x: ['Atom'] + [x[0]] + x[1])
     inner_atom = '(' >> atom << ')' | '(' >> inner_atom << ')'
-    simple_atom = id > (lambda x: ['Atom'] + [x])
+    simple_atom = identifier | variable > (lambda x: ['Atom'] + [x]) # false
+
+    program = module & rep(type) & rep(relation) > (lambda x: printAST(['Program'] + [x[0]] + x[1] + x[2]))
 
 
 if __name__ == '__main__':
@@ -70,4 +46,3 @@ if __name__ == '__main__':
             file_out.write(f'OK !\n{res.value}')
         else:
             file_out.write(f'ERROR !\n{res.message}')
-
