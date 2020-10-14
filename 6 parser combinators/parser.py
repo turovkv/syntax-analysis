@@ -22,8 +22,8 @@ class PrologParsers(TextParsers, whitespace=r'[ \t\n\r]*'):
 
     type = 'type' >> identifier & typeexpr << '.' > (lambda x: ['Typedef'] + [x[0]] + [x[1]])
 
-    typeexpr = rep1sep(inner_type, '->') > (lambda x: x[0] if len(x) == 1 and x[0][0] == 'Type' else ['Type'] + x)
-    inner_type = atom | variable | '(' >> inner_type << ')' | '(' >> typeexpr << ')'
+    typeexpr = rep1sep(type_arg, '->') > (lambda x: x[0] if len(x) == 1 and x[0][0] == 'Type' else ['Type'] + x)
+    type_arg = atom | variable | '(' >> type_arg << ')' | '(' >> typeexpr << ')'
 
     relation = atom & opt(':-' >> disjunction) << '.' > (lambda x: ['Relation'] + [x[0]] + x[1])
 
@@ -33,7 +33,7 @@ class PrologParsers(TextParsers, whitespace=r'[ \t\n\r]*'):
 
     atom = identifier & rep(simple_atom | inner_atom) > (lambda x: ['Atom'] + [x[0]] + x[1])
     inner_atom = '(' >> atom << ')' | '(' >> inner_atom << ')'
-    simple_atom = identifier | variable > (lambda x: ['Atom'] + [x]) # false
+    simple_atom = identifier | variable > (lambda x: ['Atom'] + [x]) # false!!!!!
 
     program = module & rep(type) & rep(relation) > (lambda x: printAST(['Program'] + [x[0]] + x[1] + x[2]))
 
@@ -41,7 +41,20 @@ class PrologParsers(TextParsers, whitespace=r'[ \t\n\r]*'):
 if __name__ == '__main__':
     with open(sys.argv[1], 'r') as file_in, \
             open(sys.argv[1] + '.out', 'w') as file_out:
-        res = PrologParsers.program.parse(file_in.read())
+
+        if len(sys.argv) == 2 or sys.argv[2] == '--prog':
+            res = PrologParsers.program.parse(file_in.read())
+        elif sys.argv[2] == '--atom':
+            res = PrologParsers.atom.parse(file_in.read())
+        elif sys.argv[2] == '--typeexpr':
+            PrologParsers.typeexpr.parse(file_in.read())
+        elif sys.argv[2] == '--type':
+            PrologParsers.type.parse(file_in.read())
+        elif sys.argv[2] == '--module':
+            PrologParsers.module.parse(file_in.read())
+        elif sys.argv[2] == '--relation':
+            PrologParsers.relation.parse(file_in.read())
+
         if isinstance(res, Success):
             file_out.write(f'OK !\n{res.value}')
         else:
