@@ -1,6 +1,3 @@
-import argparse
-from typing import List
-
 from parsita import *
 import sys
 
@@ -42,7 +39,7 @@ class PrologParsers(TextParsers, whitespace=r'[ \t\n\r]*'):
     variable = not_keyword_comb(reg(r'[A-Z][a-zA-Z_0-9]*')) > (lambda x: ['Var'] + [x])
 
 
-def main(args: List[str]):
+def main(args):
     if len(args) == 1:
         option = None
         filename = args[0]
