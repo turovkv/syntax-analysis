@@ -1,3 +1,4 @@
+import argparse
 from typing import List
 
 from parsita import *
@@ -15,12 +16,11 @@ def printAST(node):
 
 
 class PrologParsers(TextParsers, whitespace=r'[ \t\n\r]*'):
-    program = module & rep(typedef) & rep(relation) > (lambda x: printAST(['Program'] + [x[0]] + x[1] + x[2]))
+    program = opt(module) & rep(typedef) & rep(relation) > (lambda x: ['Program'] + x[0] + x[1] + x[2])
 
     module = 'module' >> identifier << '.' > (lambda x: ['Module'] + [x])
 
     typedef = 'type' >> identifier & opt(typeexpr) << '.' > (lambda x: ['Typedef'] + [x[0]] + x[1])
-
     typeexpr = ((type_arg << '->') & typeexpr > (lambda x: ['Arrow'] + x)) | type_arg
     type_arg = '(' >> typeexpr << ')' | type_simple
     type_simple = atom | variable > (lambda x: ['Type'] + [x])
@@ -42,25 +42,35 @@ class PrologParsers(TextParsers, whitespace=r'[ \t\n\r]*'):
     variable = not_keyword_comb(reg(r'[A-Z][a-zA-Z_0-9]*')) > (lambda x: ['Var'] + [x])
 
 
-def main(args_str: List[str]):
-    with open(args_str[0], 'r') as file_in, \
-            open(args_str[0] + '.out', 'w') as file_out:
+def main(args: List[str]):
+    if len(args) == 1:
+        option = None
+        filename = args[0]
+    elif len(args) == 2:
+        option = args[0]
+        filename = args[1]
+    else:
+        print('Invalid args')
+        return
 
-        if len(args_str) == 1 or args_str[2] == '--prog':
+    with open(filename, 'r') as file_in, \
+            open(filename + '.out', 'w') as file_out:
+
+        if option is None or option == '--prog':
             res = PrologParsers.program.parse(file_in.read())
-        elif args_str[1] == '--atom':
+        elif option == '--atom':
             res = PrologParsers.atom.parse(file_in.read())
-        elif args_str[1] == '--typeexpr':
-            PrologParsers.typeexpr.parse(file_in.read())
-        elif args_str[1] == '--type':
-            PrologParsers.typedef.parse(file_in.read())
-        elif args_str[1] == '--module':
-            PrologParsers.module.parse(file_in.read())
-        elif args_str[1] == '--relation':
-            PrologParsers.relation.parse(file_in.read())
+        elif option == '--typeexpr':
+            res = PrologParsers.typeexpr.parse(file_in.read())
+        elif option == '--type':
+            res = PrologParsers.typedef.parse(file_in.read())
+        elif option == '--module':
+            res = PrologParsers.module.parse(file_in.read())
+        elif option == '--relation':
+            res = PrologParsers.relation.parse(file_in.read())
 
         if isinstance(res, Success):
-            file_out.write(f'OK !\n{res.value}')
+            file_out.write(printAST(res.value))
         else:
             file_out.write(f'ERROR !\n{res.message}')
 
