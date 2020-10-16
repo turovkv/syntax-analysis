@@ -65,6 +65,9 @@ def main(args):
             res = PrologParsers.module.parse(file_in.read())
         elif option == '--relation':
             res = PrologParsers.relation.parse(file_in.read())
+        else:
+            print('Invalid args')
+            return
 
         if isinstance(res, Success):
             file_out.write(printAST(res.value))

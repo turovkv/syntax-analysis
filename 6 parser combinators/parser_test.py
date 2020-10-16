@@ -161,7 +161,27 @@ def test_integrate_prog(tmp_path, monkeypatch):
     assert res == 'Program (\nRelation (Atom (ID (a)) (Atom (ID (a))))\n)'
 
 
-def test_integrate_type(tmp_path, monkeypatch):
+def test_integrate_prog_2(tmp_path, monkeypatch):
+    filename = 'a'
+    text = 'a a.'
+    (tmp_path / filename).write_text(text)
+    monkeypatch.chdir(tmp_path)
+    parser.main([f'{filename}'])
+    res = open(f'{filename}.out', 'r').read()
+    assert res == 'Program (\nRelation (Atom (ID (a)) (Atom (ID (a))))\n)'
+
+
+def test_integrate_atom(tmp_path, monkeypatch):
+    filename = 'a'
+    text = 'a a'
+    (tmp_path / filename).write_text(text)
+    monkeypatch.chdir(tmp_path)
+    parser.main(['--atom', f'{filename}'])
+    res = open(f'{filename}.out', 'r').read()
+    assert res == 'Atom (ID (a)) (Atom (ID (a)))'
+
+
+def test_integrate_typeexpr(tmp_path, monkeypatch):
     filename = 'a'
     text = 'a->a'
     (tmp_path / filename).write_text(text)
@@ -169,3 +189,55 @@ def test_integrate_type(tmp_path, monkeypatch):
     parser.main(['--typeexpr', f'{filename}'])
     res = open(f'{filename}.out', 'r').read()
     assert res == 'Arrow (Type (Atom (ID (a)))) (Type (Atom (ID (a))))'
+
+
+def test_integrate_type(tmp_path, monkeypatch):
+    filename = 'a'
+    text = 'type a a->a.'
+    (tmp_path / filename).write_text(text)
+    monkeypatch.chdir(tmp_path)
+    parser.main(['--type', f'{filename}'])
+    res = open(f'{filename}.out', 'r').read()
+    assert res == 'Typedef (ID (a)) (Arrow (Type (Atom (ID (a)))) (Type (Atom (ID (a)))))'
+
+
+def test_integrate_module(tmp_path, monkeypatch):
+    filename = 'a'
+    text = 'module a.'
+    (tmp_path / filename).write_text(text)
+    monkeypatch.chdir(tmp_path)
+    parser.main(['--module', f'{filename}'])
+    res = open(f'{filename}.out', 'r').read()
+    assert res == 'Module (ID (a))'
+
+
+def test_integrate_relation_error(tmp_path, monkeypatch):
+    filename = 'a'
+    text = 'a :- a a'
+    (tmp_path / filename).write_text(text)
+    monkeypatch.chdir(tmp_path)
+    parser.main(['--relation', f'{filename}'])
+    res = open(f'{filename}.out', 'r').read()
+    assert res.split(' ', 1)[0] == 'ERROR'
+
+
+def test_integrate_arg_error_1(tmp_path, monkeypatch, capsys):
+    filename = 'a'
+    text = 'kek'
+    (tmp_path / filename).write_text(text)
+    monkeypatch.chdir(tmp_path)
+    parser.main(['a', 'b', f'{filename}'])
+    out, err = capsys.readouterr()
+    assert err == ''
+    assert out == 'Invalid args\n'
+
+
+def test_integrate_arg_error_2(tmp_path, monkeypatch, capsys):
+    filename = 'a'
+    text = 'kek'
+    (tmp_path / filename).write_text(text)
+    monkeypatch.chdir(tmp_path)
+    parser.main(['kek', f'{filename}'])
+    out, err = capsys.readouterr()
+    assert err == ''
+    assert out == 'Invalid args\n'
